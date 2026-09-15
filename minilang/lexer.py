@@ -139,8 +139,14 @@ class Lexer:
         self.add_token(TokenType.INT_LITERAL)
 
     def line_comment(self) -> None:
-        """Substituído na Tarefa 6."""
-        raise NotImplementedError
+        """Consome o comentário até CR, NL ou fim da entrada.
+
+        As duas barras já foram consumidas por ``scan_token()``. A quebra de
+        linha não é consumida aqui: a próxima chamada de ``scan_token()`` a
+        reconhece como WHITESPACE.
+        """
+        while not self.at_end() and self.peek() != "\r" and self.peek() != "\n":
+            self.advance()
 
     def report_invalid_character(self, simbolo: str) -> None:
         """Substituído na Tarefa 7."""
