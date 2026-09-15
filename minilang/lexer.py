@@ -149,8 +149,23 @@ class Lexer:
             self.advance()
 
     def report_invalid_character(self, simbolo: str) -> None:
-        """Substituído na Tarefa 7."""
-        raise NotImplementedError
+        """Registra o diagnóstico do símbolo inválido que já foi consumido.
+
+        O símbolo é consumido por ``scan_token()`` antes desta chamada, e por
+        isso a posição registrada é a do início do lexema atual. Consumir antes
+        de registrar é o que garante progresso e evita laço infinito.
+        """
+        self.diagnostics.append(
+            Diagnostico(
+                simbolo=simbolo,
+                linha=self.start_line,
+                coluna=self.start_column,
+                mensagem=(
+                    f"símbolo inválido {simbolo!r}: "
+                    "não pertence ao alfabeto da MiniLang"
+                ),
+            )
+        )
 
     # ------------------------------------------------------------------
     # Navegação sobre a entrada
