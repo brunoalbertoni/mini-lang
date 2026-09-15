@@ -1,0 +1,15 @@
+// Soma dois valores e imprime o resultado
+int total;
+int passo;
+
+total = 0;
+passo = 007;
+
+while (total < 100) {
+    total = total + passo;
+    if (total >= 50) {
+        print(total);
+    } else {
+        print(passo);
+    }
+}

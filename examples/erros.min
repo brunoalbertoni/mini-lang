@@ -1,0 +1,5 @@
+// Programa com simbolos fora do alfabeto da MiniLang
+int v@lor;
+vãlor = 10;
+if (v != 3) { print(v); }
+print(v) ! ;
