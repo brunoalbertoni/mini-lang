@@ -4,9 +4,15 @@ A varredura é feita símbolo a símbolo a partir de um cursor sobre ``source``.
 Nenhuma etapa divide a entrada previamente.
 """
 
-from minilang.alfabeto import eh_digito, eh_espaco, eh_inicio_ident, normalizar_fonte
+from minilang.alfabeto import (
+    eh_continuacao_ident,
+    eh_digito,
+    eh_espaco,
+    eh_inicio_ident,
+    normalizar_fonte,
+)
 from minilang.diagnostics import Diagnostico
-from minilang.tokens import Token, TokenType
+from minilang.tokens import PALAVRAS_RESERVADAS, Token, TokenType
 
 SIMBOLOS_SIMPLES = {
     "+": TokenType.PLUS,
@@ -105,12 +111,32 @@ class Lexer:
     # ------------------------------------------------------------------
 
     def identifier(self) -> None:
-        """Substituído na Tarefa 5."""
-        raise NotImplementedError
+        """Consome a continuação do identificador e consulta as reservadas.
+
+        O primeiro símbolo já foi consumido por ``scan_token()``. A consulta à
+        tabela acontece só depois do maior casamento, por isso ``intx`` é
+        ``IDENT`` e não ``KW_INT`` seguido de ``IDENT``.
+        """
+        while eh_continuacao_ident(self.peek()):
+            self.advance()
+
+        lexema = self.source[self.start:self.current]
+
+        if lexema in PALAVRAS_RESERVADAS:
+            self.add_token(PALAVRAS_RESERVADAS[lexema])
+        else:
+            self.add_token(TokenType.IDENT)
 
     def number(self) -> None:
-        """Substituído na Tarefa 5."""
-        raise NotImplementedError
+        """Consome os dígitos restantes do literal inteiro.
+
+        Zeros à esquerda são preservados no lexema; ``+`` e ``-`` não fazem
+        parte do literal e viram tokens próprios.
+        """
+        while eh_digito(self.peek()):
+            self.advance()
+
+        self.add_token(TokenType.INT_LITERAL)
 
     def line_comment(self) -> None:
         """Substituído na Tarefa 6."""
