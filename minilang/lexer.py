@@ -4,9 +4,20 @@ A varredura é feita símbolo a símbolo a partir de um cursor sobre ``source``.
 Nenhuma etapa divide a entrada previamente.
 """
 
-from minilang.alfabeto import normalizar_fonte
+from minilang.alfabeto import eh_digito, eh_espaco, eh_inicio_ident, normalizar_fonte
 from minilang.diagnostics import Diagnostico
 from minilang.tokens import Token, TokenType
+
+SIMBOLOS_SIMPLES = {
+    "+": TokenType.PLUS,
+    "-": TokenType.MINUS,
+    "*": TokenType.STAR,
+    "(": TokenType.LPAREN,
+    ")": TokenType.RPAREN,
+    "{": TokenType.LBRACE,
+    "}": TokenType.RBRACE,
+    ";": TokenType.SEMICOLON,
+}
 
 
 class Lexer:
@@ -22,6 +33,92 @@ class Lexer:
         self.start_column = 1
         self.tokens: list[Token] = []
         self.diagnostics: list[Diagnostico] = []
+
+    # ------------------------------------------------------------------
+    # Varredura
+    # ------------------------------------------------------------------
+
+    def scan_tokens(self) -> tuple[list[Token], list[Diagnostico]]:
+        """Varre toda a entrada e devolve os tokens e os diagnósticos.
+
+        Cada iteração registra onde o próximo lexema começa e delega a
+        ``scan_token()``, que consome ao menos um símbolo. Essa invariante é o
+        que impede laço infinito diante de entrada inválida.
+        """
+        while not self.at_end():
+            self.start = self.current
+            self.start_line = self.line
+            self.start_column = self.column
+
+            self.scan_token()
+
+        self.tokens.append(Token(TokenType.EOF, "", self.line, self.column))
+
+        return self.tokens, self.diagnostics
+
+    def scan_token(self) -> None:
+        """Identifica a classe iniciada na posição atual e a consome."""
+        if self.peek() == "/" and self.peek_next() == "/":
+            self.advance()
+            self.advance()
+            self.line_comment()
+            return
+
+        atual = self.advance()
+
+        if eh_inicio_ident(atual):
+            self.identifier()
+        elif eh_digito(atual):
+            self.number()
+        elif atual == "/":
+            self.add_token(TokenType.SLASH)
+        elif atual == "=":
+            if self.match("="):
+                self.add_token(TokenType.EQUAL_EQUAL)
+            else:
+                self.add_token(TokenType.ASSIGN)
+        elif atual == "!":
+            if self.match("="):
+                self.add_token(TokenType.BANG_EQUAL)
+            else:
+                self.report_invalid_character(atual)
+        elif atual == "<":
+            if self.match("="):
+                self.add_token(TokenType.LESS_EQUAL)
+            else:
+                self.add_token(TokenType.LESS)
+        elif atual == ">":
+            if self.match("="):
+                self.add_token(TokenType.GREATER_EQUAL)
+            else:
+                self.add_token(TokenType.GREATER)
+        elif atual in SIMBOLOS_SIMPLES:
+            self.add_token(SIMBOLOS_SIMPLES[atual])
+        elif eh_espaco(atual):
+            while eh_espaco(self.peek()):
+                self.advance()
+        else:
+            self.report_invalid_character(atual)
+
+    # ------------------------------------------------------------------
+    # Reconhecedores de continuidade
+    # ------------------------------------------------------------------
+
+    def identifier(self) -> None:
+        """Substituído na Tarefa 5."""
+        raise NotImplementedError
+
+    def number(self) -> None:
+        """Substituído na Tarefa 5."""
+        raise NotImplementedError
+
+    def line_comment(self) -> None:
+        """Substituído na Tarefa 6."""
+        raise NotImplementedError
+
+    def report_invalid_character(self, simbolo: str) -> None:
+        """Substituído na Tarefa 7."""
+        raise NotImplementedError
 
     # ------------------------------------------------------------------
     # Navegação sobre a entrada
@@ -72,3 +169,8 @@ class Lexer:
         """Cria um token com ``source[start:current]`` e a posição inicial."""
         lexema = self.source[self.start:self.current]
         self.tokens.append(Token(tipo, lexema, self.start_line, self.start_column))
+
+
+def tokenizar(fonte: str) -> tuple[list[Token], list[Diagnostico]]:
+    """Atalho que constrói um ``Lexer`` e executa a varredura completa."""
+    return Lexer(fonte).scan_tokens()
