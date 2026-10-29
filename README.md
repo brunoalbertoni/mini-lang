@@ -1,80 +1,58 @@
-# Analisador Léxico da MiniLang
+# Analisador Sintático (Parser) da MiniLang - Trabalho 02
 
-Implementação manual do lexer da MiniLang: percorre o código-fonte da esquerda
-para a direita, símbolo a símbolo, e produz a lista de tokens e a lista de
-diagnósticos de símbolos inválidos.
+Implementação de um parser descendente recursivo para a MiniLang, construído sobre o analisador léxico prévio. O parser consome a lista de tokens, avalia a gramática da linguagem, constrói uma Árvore Sintática Abstrata (AST) e relata erros sintáticos precisos.
 
 ## 1. Integrantes
 
-* *Luis Felipi Ildefonco Lins* - 1996781
-* *Hugo Loiola de Oliveira* - 2013653
-* *Wallaf Felipe Lyra de Oliveira* - 2003058
-* *Felipe Sizilio Pelissari de Oliveira* - 1990260
-* *Bruno Henrique Albertoni Silva* - 1988433
+*Luis Felipi Ildefonco Lins* 1996781
+*Hugo Loiola de Oliveira* 2013653
+*Wallaf Felipe Lyra de Oliveira* 2003058
+*Felipe Sizilio Pelissari de Oliveira* 1990260
+*Bruno Henrique Albertoni Silva* 1988433
 
 ## 2. Execução
 
-```
+```powershell
 python main.py examples/programa.min
-python main.py examples/erros.min
 ```
 
-A saída traz a tabela de tokens (`linha:coluna`, tipo e lexema) seguida da lista
-de diagnósticos. Código de saída: `0` sem diagnósticos, `1` quando há símbolo
-inválido, `2` para erro de uso ou de leitura do arquivo.
+A saída do programa agora executa duas fases:
+1. **Fase Léxica:** Se houver símbolos inválidos, exibe os diagnósticos e encerra.
+2. **Fase Sintática:** Se a sintaxe for válida, exibe no terminal a **Árvore Sintática Abstrata (AST)** formatada. Se o código for malformado (ex: `print(2+);`), a execução para imediatamente no primeiro erro e exibe a linha, a coluna e o token inesperado.
 
 ## 3. Testes
 
-```
-python -m pytest tests/ -v
+```powershell
+python -m pytest
 ```
 
-São 96 testes. O pytest é a única dependência, e serve só aos testes — o lexer
-usa apenas a biblioteca padrão. Instale com `pip install pytest` se necessário.
+São **102 testes** automatizados cobrindo tanto as regras do Analisador Léxico quanto as novas regras do Analisador Sintático (Precedência, Associatividade à esquerda e Erros). O `pytest` é a única dependência. Instale com `pip install pytest` se necessário.
 
-## 4. Organização do lexer
+## 4. Organização do Projeto
 
 | Arquivo | Responsabilidade |
 | :--- | :--- |
-| `minilang/tokens.py` | `TokenType` (24 tipos), `Token` e a tabela `PALAVRAS_RESERVADAS` |
-| `minilang/diagnostics.py` | `Diagnostico`: símbolo inválido, linha, coluna e mensagem |
-| `minilang/alfabeto.py` | Definição manual do alfabeto e normalização CRLF→NL |
-| `minilang/lexer.py` | Classe `Lexer`: estado da varredura e as 12 operações |
-| `main.py` | Leitura do arquivo e formatação da saída |
+| `minilang/parser.py` | Classe `Parser`: implementa a descida recursiva (expressões e comandos). |
+| `minilang/ast.py` | Estruturas de dados (DataClasses) que formam os nós da AST (`Programa`, `Binaria`, `Atribuicao`, etc). |
+| `minilang/tokens.py` | `TokenType` (24 tipos), `Token` e a tabela `PALAVRAS_RESERVADAS`. |
+| `minilang/diagnostics.py` | `Diagnostico`: símbolo inválido, linha, coluna e mensagem. |
+| `minilang/alfabeto.py` | Definição manual do alfabeto e normalização CRLF→NL. |
+| `minilang/lexer.py` | Classe `Lexer`: estado da varredura e operações léxicas. |
+| `main.py` | Leitura do arquivo e ponto de entrada da compilação. |
 
-A classe `Lexer` mantém `source`, `start`, `current`, `line`, `column`,
-`start_line`, `start_column`, `tokens` e `diagnostics`, e implementa
-`scan_tokens`, `scan_token`, `at_end`, `advance`, `peek`, `peek_next`, `match`,
-`add_token`, `identifier`, `number`, `line_comment` e
-`report_invalid_character`.
+### Decisões centrais do Parser (Trabalho 02):
 
-Decisões centrais:
+*   **Descida Recursiva:** As regras da gramática foram mapeadas diretamente para métodos estruturais: `programa()`, `lista_itens()`, `item()`, `atribuicao()`, `declaracao()` e `saida()`.
+*   **Precedência e Associatividade (Etapa 1):** Tratadas através do encadeamento de chamadas `expressao()` (Somas/Subtrações) -> `termo()` (Multiplicações/Divisões) -> `fator()` (Agrupamentos e Literais). O uso de laços `while` no parser garante a associatividade à esquerda, agrupando `10 - 3 - 2` corretamente como `(10 - 3) - 2`.
+*   **Diagnóstico Fail-Fast (Etapa 3):** O parser aborta a execução no primeiro erro sintático detectado. A exceção customizada `ParseError` captura o token atual para gerar mensagens amigáveis informando exatamente onde o código quebrou.
 
-* **Maior casamento.** `scan_token()` consome o maior lexema válido antes de
-  classificar. Por isso `intx` é um `IDENT` inteiro: a tabela de palavras
-  reservadas só é consultada em `identifier()`, depois que toda a continuação
-  foi consumida. O mesmo vale para `===`, que vira `EQUAL_EQUAL` e `ASSIGN`.
-* **Posição em um lugar só.** `advance()` é o único método que altera `line` e
-  `column`. `match()` consome através dele, o que evita duas implementações
-  divergentes de controle de posição.
-* **Alfabeto manual.** `alfabeto.py` compara faixas de code points ASCII em vez
-  de usar `re`, `isalpha()` ou `isdigit()`. Como `ã` é U+00E3, acima de `z`, a
-  comparação já rejeita acentos sem tratamento especial.
-* **Progresso garantido.** Todo símbolo inválido é consumido *antes* do
-  diagnóstico ser registrado, então cada iteração de `scan_tokens()` avança pelo
-  menos uma posição. Não há entrada capaz de provocar laço infinito.
+### Decisões centrais do Lexer (Trabalho 01):
 
-## 5. Limitações conhecidas
+*   **Maior casamento:** O lexer consome o maior lexema válido antes de classificar (ex: `intx` é um `IDENT` inteiro, não `KW_INT` + `IDENT`).
+*   **Alfabeto manual:** Comparação de *code points* ASCII em vez de Regex.
+*   **Progresso garantido:** Evita laços infinitos consumindo símbolos inválidos antes de registrar o diagnóstico léxico.
 
-* **Alfabeto restrito a ASCII.** Letras acentuadas geram diagnóstico por
-  definição do padrão IDENT_BASE. `vãlor` produz `IDENT("v")`, um diagnóstico
-  para `ã` e `IDENT("lor")`.
-* **Sem análise sintática.** O lexer não julga se a sequência de tokens forma um
-  programa válido. `2total` produz `INT_LITERAL("2")` e `IDENT("total")` sem
-  erro léxico; essa decisão cabe ao analisador sintático.
-* **CR solitário conta como quebra de linha.** Arquivos no padrão Mac clássico
-  avançam a linha corretamente, mas o par CRLF é normalizado antes da varredura
-  para não contar duas linhas.
-* **Recuperação de erro mínima.** Diante de símbolo inválido o lexer consome um
-  único símbolo e segue. Não há tentativa de agrupar erros vizinhos nem de
-  sugerir correções.
+## 5. Limitações de Escopo (Trabalho 02)
+
+*   **Escopo Restrito do Parser:** Conforme estipulado nos requisitos obrigatórios, a implementação atual foca unicamente em `int`, `print`, atribuições e expressões matemáticas. Comandos de bloco, condicionais (`if/else`) e laços (`while`) foram intencionalmente **removidos/ignorados** no `parser.py` para alinhar com os limites avaliativos desta entrega.
+*   **Sem Execução Semântica:** A AST gerada reflete a estrutura do programa. O parser não executa as operações matemáticas (ex: não resolve `2+3`), nem faz análise semântica (como verificar se uma variável foi declarada antes de ser usada).
