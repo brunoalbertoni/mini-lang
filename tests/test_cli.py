@@ -7,8 +7,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 
 
 def rodar(*args):
-    # PYTHONIOENCODING é necessário no Windows: sem ele o processo filho escreve
-    # em cp1252 e "erro léxico" volta ilegível para as asserções abaixo.
+     
     ambiente = dict(os.environ, PYTHONIOENCODING="utf-8")
     return subprocess.run(
         [sys.executable, "main.py", *args],
@@ -25,6 +24,7 @@ def test_programa_valido_sai_com_codigo_zero():
     assert resultado.returncode == 0
     assert "AST ESPERADA" not in resultado.stdout
     assert "Programa" in resultado.stdout
+
 
 def test_programa_valido_nao_lista_diagnosticos():
     resultado = rodar("examples/programa.min")
