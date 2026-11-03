@@ -14,6 +14,7 @@ class Programa:
 @dataclass(frozen=True)
 class Declaracao:
     nome: str
+    valor: Any | None = None
 
 
 @dataclass(frozen=True)
@@ -59,4 +60,12 @@ class Se:
 @dataclass(frozen=True)
 class Enquanto:
     condicao: Any
+    corpo: Any
+
+
+@dataclass(frozen=True)
+class Para:
+    inicializacao: Any | None
+    condicao: Any | None
+    incremento: Any | None
     corpo: Any

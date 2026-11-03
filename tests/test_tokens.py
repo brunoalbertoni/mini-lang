@@ -2,13 +2,13 @@ from minilang.diagnostics import Diagnostico
 from minilang.tokens import PALAVRAS_RESERVADAS, Token, TokenType
 
 
-def test_existem_24_tipos_de_token():
-    assert len(TokenType) == 24
+def test_existem_25_tipos_de_token():
+    assert len(TokenType) == 25
 
 
 def test_tipos_obrigatorios_do_enunciado():
     esperados = [
-        "KW_INT", "KW_PRINT", "KW_IF", "KW_ELSE", "KW_WHILE",
+        "KW_INT", "KW_PRINT", "KW_IF", "KW_ELSE", "KW_WHILE", "KW_FOR",
         "IDENT", "INT_LITERAL", "ASSIGN",
         "PLUS", "MINUS", "STAR", "SLASH",
         "EQUAL_EQUAL", "BANG_EQUAL", "LESS", "LESS_EQUAL", "GREATER", "GREATER_EQUAL",
@@ -26,6 +26,7 @@ def test_tabela_de_palavras_reservadas():
         "if": TokenType.KW_IF,
         "else": TokenType.KW_ELSE,
         "while": TokenType.KW_WHILE,
+        "for": TokenType.KW_FOR,
     }
 
 

@@ -32,6 +32,14 @@ def test_programa_valido_nao_lista_diagnosticos():
     assert "ERRO SINTÁTICO" not in resultado.stdout
 
 
+def test_programa_valido_imprime_estruturas_de_controle_e_blocos():
+    resultado = rodar("examples/programa.min")
+    assert "├── Se" in resultado.stdout
+    assert "├── Enquanto" in resultado.stdout
+    assert "└── Para" in resultado.stdout
+    assert "Bloco" in resultado.stdout
+
+
 def test_programa_com_erros_sai_com_codigo_um():
     resultado = rodar("examples/erros.min")
     assert resultado.returncode == 1
