@@ -34,7 +34,7 @@ São **102 testes** automatizados cobrindo tanto as regras do Analisador Léxico
 | :--- | :--- |
 | `minilang/parser.py` | Classe `Parser`: implementa a descida recursiva (expressões e comandos). |
 | `minilang/ast.py` | Estruturas de dados (DataClasses) que formam os nós da AST (`Programa`, `Binaria`, `Atribuicao`, etc). |
-| `minilang/tokens.py` | `TokenType` (24 tipos), `Token` e a tabela `PALAVRAS_RESERVADAS`. |
+| `minilang/tokens.py` | `TokenType` (25 tipos), `Token` e a tabela `PALAVRAS_RESERVADAS`. |
 | `minilang/diagnostics.py` | `Diagnostico`: símbolo inválido, linha, coluna e mensagem. |
 | `minilang/alfabeto.py` | Definição manual do alfabeto e normalização CRLF→NL. |
 | `minilang/lexer.py` | Classe `Lexer`: estado da varredura e operações léxicas. |
@@ -52,7 +52,15 @@ São **102 testes** automatizados cobrindo tanto as regras do Analisador Léxico
 *   **Alfabeto manual:** Comparação de *code points* ASCII em vez de Regex.
 *   **Progresso garantido:** Evita laços infinitos consumindo símbolos inválidos antes de registrar o diagnóstico léxico.
 
-## 5. Limitações de Escopo (Trabalho 02)
+## 5. Estruturas de Controle
 
-*   **Escopo Restrito do Parser:** Conforme estipulado nos requisitos obrigatórios, a implementação atual foca unicamente em `int`, `print`, atribuições e expressões matemáticas. Comandos de bloco, condicionais (`if/else`) e laços (`while`) foram intencionalmente **removidos/ignorados** no `parser.py` para alinhar com os limites avaliativos desta entrega.
+O parser reconhece blocos com chaves, condicionais `if`/`else` e laços `while` e
+`for`. Condições usam um operador relacional (`==`, `!=`, `<`, `<=`, `>` ou
+`>=`) entre expressões aritméticas. O `for` segue a forma
+`for (inicialização; condição; incremento) { ... }`; as cláusulas podem ficar
+vazias, e a inicialização aceita uma atribuição ou uma declaração `int`.
+
+## 6. Limitações de Escopo (Trabalho 02)
+
+*   **Escopo do Parser:** A implementação analisa a estrutura sintática e gera a AST; ela não executa os comandos nem avalia as condições.
 *   **Sem Execução Semântica:** A AST gerada reflete a estrutura do programa. O parser não executa as operações matemáticas (ex: não resolve `2+3`), nem faz análise semântica (como verificar se uma variável foi declarada antes de ser usada).

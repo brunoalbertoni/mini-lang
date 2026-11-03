@@ -5,7 +5,7 @@ from enum import Enum
 
 
 class TokenType(Enum):
-    """As 24 categorias de token produzidas pelo lexer."""
+    """As 25 categorias de token produzidas pelo lexer."""
 
     # KEYWORD_CORE
     KW_INT = "KW_INT"
@@ -15,6 +15,7 @@ class TokenType(Enum):
     KW_IF = "KW_IF"
     KW_ELSE = "KW_ELSE"
     KW_WHILE = "KW_WHILE"
+    KW_FOR = "KW_FOR"
 
     # IDENT_BASE e INT_LITERAL
     IDENT = "IDENT"
@@ -56,6 +57,7 @@ PALAVRAS_RESERVADAS = {
     "if": TokenType.KW_IF,
     "else": TokenType.KW_ELSE,
     "while": TokenType.KW_WHILE,
+    "for": TokenType.KW_FOR,
 }
 
 

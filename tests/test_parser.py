@@ -1,5 +1,5 @@
 import pytest
-from minilang.ast import Atribuicao, Binaria, Declaracao, Inteiro, Programa, Saida, Variavel
+from minilang.ast import Atribuicao, Binaria, Bloco, Declaracao, Enquanto, Inteiro, Para, Programa, Saida, Se, Variavel
 from minilang.parser import ParseError, parsear
 
 def test_programa_simples_com_declaracao_atribuicao_e_saida():
@@ -54,3 +54,43 @@ def test_erro_sintatico_sinalizado_com_posicao_correta():
     assert "linha 1" in mensagem
     assert "coluna 9" in mensagem
     assert "')'" in mensagem
+
+
+def test_condicional_if_else_com_blocos_e_comparacao():
+    ast = parsear("if (x < 10) { print(x); } else { print(0); }")
+    assert ast.declaracoes == [
+        Se(
+            Binaria("<", Variavel("x"), Inteiro(10)),
+            Bloco([Saida(Variavel("x"))]),
+            Bloco([Saida(Inteiro(0))]),
+        )
+    ]
+
+
+def test_laco_while_com_bloco():
+    ast = parsear("while (x != 0) { x = x - 1; }")
+    assert ast.declaracoes == [
+        Enquanto(
+            Binaria("!=", Variavel("x"), Inteiro(0)),
+            Bloco([Atribuicao("x", Binaria("-", Variavel("x"), Inteiro(1)))]),
+        )
+    ]
+
+
+def test_laco_for_com_atribuicoes():
+    ast = parsear("for (i = 0; i < 10; i = i + 1) { print(i); }")
+    assert ast.declaracoes == [
+        Para(
+            Atribuicao("i", Inteiro(0)),
+            Binaria("<", Variavel("i"), Inteiro(10)),
+            Atribuicao("i", Binaria("+", Variavel("i"), Inteiro(1))),
+            Bloco([Saida(Variavel("i"))]),
+        )
+    ]
+
+
+def test_laco_for_com_declaracao_e_clausulas_vazias():
+    ast = parsear("for (int i = 0; ; ) { print(i); }")
+    assert ast.declaracoes == [
+        Para(Declaracao("i", Inteiro(0)), None, None, Bloco([Saida(Variavel("i"))]))
+    ]

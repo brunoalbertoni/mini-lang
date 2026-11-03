@@ -8,10 +8,14 @@ from minilang.tokens import Token, TokenType
 from .ast import (
     Atribuicao,
     Binaria,
+    Bloco,
     Declaracao,
+    Enquanto,
     Inteiro,
+    Para,
     Programa,
     Saida,
+    Se,
     Variavel,
 )
 
@@ -43,22 +47,31 @@ class Parser:
         return instrucoes
 
     def item(self) -> Any:
-        """Roteia para declaração, saída ou atribuição."""
+        """Roteia para um comando da linguagem."""
         if self.match(TokenType.KW_INT):
             return self.declaracao()
         if self.match(TokenType.KW_PRINT):
             return self.saida()
+        if self.match(TokenType.KW_IF):
+            return self.condicional()
+        if self.match(TokenType.KW_WHILE):
+            return self.enquanto()
+        if self.match(TokenType.KW_FOR):
+            return self.para()
+        if self.match(TokenType.LBRACE):
+            return self.bloco()
         
         # Se não for int nem print, obrigatoriamente deve ser uma atribuição
         return self.atribuicao()
 
-    def atribuicao(self) -> Atribuicao:
-        """Reconhece: ident = expressao ;"""
+    def atribuicao(self, consumir_ponto_e_virgula: bool = True) -> Atribuicao:
+        """Reconhece uma atribuição, opcionalmente consumindo seu ';'."""
         nome_token = self.expect(TokenType.IDENT, "esperado identificador para atribuição")
         nome = nome_token.lexema
         self.expect(TokenType.ASSIGN, "esperado '=' após o identificador")
         valor = self.expressao()
-        self.expect(TokenType.SEMICOLON, "esperado ';' após atribuição")
+        if consumir_ponto_e_virgula:
+            self.expect(TokenType.SEMICOLON, "esperado ';' após atribuição")
         return Atribuicao(nome, valor)
 
     def declaracao(self) -> Declaracao:
@@ -74,6 +87,89 @@ class Parser:
         self.expect(TokenType.RPAREN, "esperado ')' após expressão")
         self.expect(TokenType.SEMICOLON, "esperado ';' após print")
         return Saida(expr)
+
+    def bloco(self) -> Bloco:
+        """Reconhece uma sequência de comandos entre chaves."""
+        instrucoes = []
+        while not self.check(TokenType.RBRACE) and not self.at_end():
+            instrucoes.append(self.item())
+        self.expect(TokenType.RBRACE, "esperado '}' para fechar bloco")
+        return Bloco(instrucoes)
+
+    def condicao(self) -> Any:
+        """Reconhece uma comparação entre duas expressões aritméticas."""
+        esquerda = self.expressao()
+        operadores = (
+            TokenType.EQUAL_EQUAL,
+            TokenType.BANG_EQUAL,
+            TokenType.LESS,
+            TokenType.LESS_EQUAL,
+            TokenType.GREATER,
+            TokenType.GREATER_EQUAL,
+        )
+        if not self.check_any(*operadores):
+            raise ParseError("esperado operador relacional na condição", self.peek())
+        operador = self.advance().lexema
+        direita = self.expressao()
+        return Binaria(operador, esquerda, direita)
+
+    def condicao_parentizada(self) -> Any:
+        self.expect(TokenType.LPAREN, "esperado '(' antes da condição")
+        condicao = self.condicao()
+        self.expect(TokenType.RPAREN, "esperado ')' após a condição")
+        return condicao
+
+    def condicional(self) -> Se:
+        """Reconhece: if (condição) bloco [else bloco|if]."""
+        condicao = self.condicao_parentizada()
+        self.expect(TokenType.LBRACE, "esperado '{' após condição do if")
+        entao = self.bloco()
+        senao = None
+        if self.match(TokenType.KW_ELSE):
+            if self.match(TokenType.KW_IF):
+                senao = self.condicional()
+            else:
+                self.expect(TokenType.LBRACE, "esperado '{' após 'else'")
+                senao = self.bloco()
+        return Se(condicao, entao, senao)
+
+    def enquanto(self) -> Enquanto:
+        """Reconhece: while (condição) bloco."""
+        condicao = self.condicao_parentizada()
+        self.expect(TokenType.LBRACE, "esperado '{' após condição do while")
+        return Enquanto(condicao, self.bloco())
+
+    def para(self) -> Para:
+        """Reconhece: for (inicialização; condição; incremento) bloco.
+
+        As três cláusulas podem ficar vazias. A inicialização aceita uma
+        atribuição ou uma declaração (com inicializador opcional).
+        """
+        self.expect(TokenType.LPAREN, "esperado '(' após 'for'")
+
+        inicializacao = None
+        if not self.check(TokenType.SEMICOLON):
+            if self.match(TokenType.KW_INT):
+                nome = self.expect(TokenType.IDENT, "esperado identificador após 'int'").lexema
+                valor = None
+                if self.match(TokenType.ASSIGN):
+                    valor = self.expressao()
+                inicializacao = Declaracao(nome, valor)
+            else:
+                inicializacao = self.atribuicao(consumir_ponto_e_virgula=False)
+        self.expect(TokenType.SEMICOLON, "esperado ';' após inicialização do for")
+
+        condicao = None
+        if not self.check(TokenType.SEMICOLON):
+            condicao = self.condicao()
+        self.expect(TokenType.SEMICOLON, "esperado ';' após condição do for")
+
+        incremento = None
+        if not self.check(TokenType.RPAREN):
+            incremento = self.atribuicao(consumir_ponto_e_virgula=False)
+        self.expect(TokenType.RPAREN, "esperado ')' após cláusulas do for")
+        self.expect(TokenType.LBRACE, "esperado '{' após cláusulas do for")
+        return Para(inicializacao, condicao, incremento, self.bloco())
 
     # ==========================================
     # ETAPA 1: Expressões Matemáticas

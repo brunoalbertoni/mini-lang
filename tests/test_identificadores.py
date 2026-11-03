@@ -8,22 +8,24 @@ def pares(fonte):
 
 
 def test_palavras_reservadas_do_nucleo_e_da_extensao():
-    assert pares("int print if else while") == [
+    assert pares("int print if else while for") == [
         (TokenType.KW_INT, "int"),
         (TokenType.KW_PRINT, "print"),
         (TokenType.KW_IF, "if"),
         (TokenType.KW_ELSE, "else"),
         (TokenType.KW_WHILE, "while"),
+        (TokenType.KW_FOR, "for"),
         (TokenType.EOF, ""),
     ]
 
 
 def test_reservada_so_e_consultada_apos_o_maior_ident():
-    assert pares("int intx ifx while") == [
+    assert pares("int intx ifx while for") == [
         (TokenType.KW_INT, "int"),
         (TokenType.IDENT, "intx"),
         (TokenType.IDENT, "ifx"),
         (TokenType.KW_WHILE, "while"),
+        (TokenType.KW_FOR, "for"),
         (TokenType.EOF, ""),
     ]
 
