@@ -28,6 +28,8 @@ def imprimir_ast(no, prefixo="", eh_ultimo=True):
             
     elif nome_classe == "Declaracao":
         print(f"{prefixo}{marcador}Declaracao({no.nome})")
+        if no.valor is not None:
+            imprimir_ast(no.valor, prefixo_filhos, True)
         
     elif nome_classe == "Atribuicao":
         print(f"{prefixo}{marcador}Atribuicao({no.nome})")
@@ -47,6 +49,34 @@ def imprimir_ast(no, prefixo="", eh_ultimo=True):
         
     elif nome_classe == "Variavel":
         print(f"{prefixo}{marcador}Variavel({no.nome})")
+
+    elif nome_classe == "Bloco":
+        print(f"{prefixo}{marcador}Bloco")
+        for i, instrucao in enumerate(no.instrucoes):
+            imprimir_ast(instrucao, prefixo_filhos, i == len(no.instrucoes) - 1)
+
+    elif nome_classe == "Se":
+        print(f"{prefixo}{marcador}Se")
+        filhos = [no.condicao, no.entao]
+        if no.senao is not None:
+            filhos.append(no.senao)
+        for i, filho in enumerate(filhos):
+            imprimir_ast(filho, prefixo_filhos, i == len(filhos) - 1)
+
+    elif nome_classe == "Enquanto":
+        print(f"{prefixo}{marcador}Enquanto")
+        imprimir_ast(no.condicao, prefixo_filhos, False)
+        imprimir_ast(no.corpo, prefixo_filhos, True)
+
+    elif nome_classe == "Para":
+        print(f"{prefixo}{marcador}Para")
+        filhos = [
+            filho
+            for filho in (no.inicializacao, no.condicao, no.incremento, no.corpo)
+            if filho is not None
+        ]
+        for i, filho in enumerate(filhos):
+            imprimir_ast(filho, prefixo_filhos, i == len(filhos) - 1)
 
 
 def main(argv: list[str]) -> int:
